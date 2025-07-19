@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    image: care-plan-calculator-backend # Use the image built by 'docker-compose build'
+    ports:
+      - "3001:3001"
+    # No volumes, no command override. Uses the Dockerfile's default CMD.
+
+  frontend:
+    build:
+      context: ./frontend
+      # No target, so it builds the final production stage
+    image: care-plan-calculator-frontend # Use the image built by 'docker-compose build'
+    ports:
+      - "3000:3000"
+    # No volumes, no command override. Uses the Dockerfile's default CMD.
+    environment:
+      - NODE_ENV=production
