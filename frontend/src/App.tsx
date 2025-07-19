@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import "./App.css";
 import { Button } from "./components/ui/button";
 import {
@@ -10,10 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "./components/ui/table";
+import { type Column, type Data, type TableData } from "./types/TableData";
+import { SpreadsheetTableCell } from "./components/ui/spreadsheet-table-cell";
 
 function App() {
   const [message, setMessage] = useState("");
-  const [tableData] = useState({
+  const template: TableData = {
     rows: 10,
     columns: [
       { id: "A", title: "Domain" },
@@ -24,8 +26,25 @@ function App() {
     ],
     data: {
       A1: { value: "20", formula: "=B1*2", error: "" },
+      D4: { value: "", formula: "=B1*2", error: "#DIV/0!" },
     },
-  });
+  };
+
+  const [tableRows, setTableRows] = useState<number>(template.rows);
+  const [tableColumns, setTableColumns] = useState<Column[]>(template.columns);
+  const [tableData, setTableData] = useState<Data>(template.data);
+
+  const handleCellUpdate = useCallback(
+    (cellId: string, value: string, formula?: string) => {
+      setTableData((tableData) => {
+        const newData = { ...tableData };
+        const currCellData = newData[cellId];
+        newData[cellId] = { ...currCellData, value, formula };
+        return { ...tableData, ...newData };
+      });
+    },
+    [],
+  );
 
   const handleEvaluate = async () => {
     try {
@@ -45,31 +64,38 @@ function App() {
   };
 
   const getHeaders = () => {
-    return tableData.columns.map((column) => (
-      <TableHead className="w-[100px]">{column.title}</TableHead>
+    return tableColumns.map((column) => (
+      <TableHead className="w-[100px]" key={column.id}>
+        {column.title}
+      </TableHead>
     ));
   };
 
-  const getRow = (index: int) => {
-    const numCols = tableData.columns.length;
+  const getRow = (index: number) => {
     const cells = [];
-    for (let col of tableData.columns) {
+    for (const col of tableColumns) {
       const cellId: string = col.id + index;
-      const data = tableData.data[cellId];
-      if (data) {
-        cells.push(<TableCell key={cellId}>{data.value}</TableCell>);
-      } else {
-        cells.push(<TableCell key={cellId}>Empty</TableCell>);
+      let data = tableData[cellId];
+      if (data === undefined) {
+        data = { value: "" };
       }
+      cells.push(
+        <SpreadsheetTableCell
+          key={cellId}
+          id={cellId}
+          data={data}
+          cellUpdate={handleCellUpdate}
+        />,
+      );
     }
     return cells;
   };
 
   const getRows = () => {
-    const numRows = tableData.rows;
+    const numRows = tableRows;
     const rows = [];
     for (let i = 1; i < numRows; i++) {
-      rows.push(<TableRow key={i}>{getRow(i)}</TableRow>);
+      rows.push(<TableRow key={"row" + i}>{getRow(i)}</TableRow>);
     }
     return rows;
   };
@@ -82,7 +108,9 @@ function App() {
       <p className="read-the-docs">{message}</p>
 
       <Table>
-        <TableCaption>Care plan calculator</TableCaption>
+        <TableCaption>
+          Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)
+        </TableCaption>
         <TableHeader>
           <TableRow>{getHeaders()}</TableRow>
         </TableHeader>
