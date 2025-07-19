@@ -7,6 +7,7 @@ import { Input } from "./input";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Button } from "./button";
 import { X } from "lucide-react";
+import { FormulaEditor } from "./formula-editor";
 
 interface SpreadsheetTableCellProps {
   className?: string;
@@ -66,23 +67,20 @@ export const SpreadsheetTableCell = React.memo(function ({
     [],
   );
 
-  const handleFocus = React.useCallback(
-    (event: React.FocusEvent<HTMLInputElement>) => {
-      if (data.formula) {
-        setShowFormulaEditor(true);
-      }
-    },
-    [data],
-  );
+  const handleFocus = React.useCallback(() => {
+    if (data.formula) {
+      setShowFormulaEditor(true);
+    }
+  }, [data]);
 
   const handleBlur = React.useCallback(() => {
     setEditMode(false);
   }, []);
 
   const handleFormulaChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (formula: string) => {
       console.log("Formula Changed");
-      cellUpdate(id, data.value, event.target.value);
+      cellUpdate(id, data.value, formula);
     },
     [cellUpdate, id, data],
   );
@@ -94,20 +92,12 @@ export const SpreadsheetTableCell = React.memo(function ({
     setShowFormulaEditor(false);
   }, [inputRef]);
 
-  const handleFormulaKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        handleCloseFormulaEditor();
-      }
-    },
-    [handleCloseFormulaEditor],
-  );
-
   const additionalClassName = getClassNames(data, editMode);
   const displayValue: string = extractValue(data);
-  const formulaValue: string = data.formula ? data.formula : "=";
-  const allowEditing = !data.formula && !data.error;
+  const formulaValue: string = data.formula ? data.formula : "";
+  const errorValue: string = data.error ? data.error : "";
+  const allowEditing = formulaValue.trim() == "" && errorValue.trim() == "";
+
   return (
     <TableCell
       key={id}
@@ -122,7 +112,7 @@ export const SpreadsheetTableCell = React.memo(function ({
           onKeyDown={handleKeyDown}
           onChange={handleChange}
           ref={inputRef}
-          readOnly={allowEditing}
+          readOnly={!allowEditing}
         />
         <PopoverTrigger
           disabled={true}
@@ -131,12 +121,11 @@ export const SpreadsheetTableCell = React.memo(function ({
         ></PopoverTrigger>
         <PopoverContent className="relative margin-top-40">
           Formula editor
-          <Input
+          <FormulaEditor
             value={formulaValue}
             onBlur={handleCloseFormulaEditor}
             onChange={handleFormulaChange}
-            onKeyDown={handleFormulaKeyDown}
-          />
+          ></FormulaEditor>
           <Button
             className="absolute top-0 right-0"
             onClick={handleCloseFormulaEditor}
