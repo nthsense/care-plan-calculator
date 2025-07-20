@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Button } from "./button";
 import { X } from "lucide-react";
 import { FormulaEditor } from "./formula-editor";
+import { PopoverArrow } from "@radix-ui/react-popover";
 
 interface SpreadsheetTableCellProps {
   className?: string;
@@ -117,9 +118,10 @@ export const SpreadsheetTableCell = React.memo(function ({
         <PopoverTrigger
           disabled={true}
           tabIndex={-1}
-          className="absolute top-0 right-0"
+          className="absolute bottom-5 center"
         ></PopoverTrigger>
         <PopoverContent className="relative margin-top-40">
+          <PopoverArrow></PopoverArrow>
           Formula editor
           <FormulaEditor
             value={formulaValue}
