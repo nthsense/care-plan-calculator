@@ -86,10 +86,9 @@ export const SpreadsheetTableCell = React.memo(function ({
 
   const handleFormulaChange = React.useCallback(
     (formula: string) => {
-      console.log("Formula Changed");
-      cellUpdate(id, data.value, formula);
+      cellUpdate(id, "###", formula);
     },
-    [cellUpdate, id, data],
+    [cellUpdate, id],
   );
 
   const handleCloseFormulaEditor = React.useCallback(() => {

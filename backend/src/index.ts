@@ -4,11 +4,7 @@ import { Cell, Data, TableData } from "./types/TableData.js";
 import { DirectedGraph } from "graphology";
 import { parser } from "./parser/syntax.grammar.js";
 import { SyntaxNode, SyntaxNodeRef, Tree } from "@lezer/common";
-import {
-  forEachNodeInTopologicalOrder,
-  topologicalSort,
-  willCreateCycle,
-} from "graphology-dag";
+import { forEachNodeInTopologicalOrder, willCreateCycle } from "graphology-dag";
 
 const app = express();
 const port = 3001;
