@@ -30,6 +30,7 @@ function toGraph(tableData: Data) {
       tree.iterate({
         enter: (node: SyntaxNodeRef) => {
           console.log(
+            "33",
             node.name,
             node.type.name,
             cell.formula?.substring(node.from, node.to),
@@ -38,14 +39,18 @@ function toGraph(tableData: Data) {
           // TODO: Implement handling for RangeToken (ex, spread A1:D1 to A1, B1, C1, D1)
           if (node.type.name === "CellToken") {
             const tokenText = cell.formula?.substring(node.from, node.to);
-            const cycle = willCreateCycle(graph, tokenText, key);
-            if (!cycle) {
+            if (willCreateCycle(graph, tokenText, key)) {
+              console.log("CYCLE DETECTED", key);
+              if (graph.hasNode(key)) {
+                console.log("FOUND NODE", key);
+              }
+              cell.error = "Cycle!!";
+              graph.updateNode(key, (attrs) => ({ ...attrs, cell }));
+            } else {
               if (!graph.hasNode(tokenText)) {
                 graph.addNode(tokenText, { cell: { value: undefined } });
               }
               graph.addDirectedEdge(tokenText, key);
-            } else {
-              cell.error = "Cycle!!";
             }
           }
           return true;
@@ -71,6 +76,7 @@ function evaluateNode(
 ) {
   let results = "";
   console.log(
+    "78",
     cellReference,
     node.type.name,
     (
@@ -124,12 +130,15 @@ function evaluateNode(
       const ref = (
         graph.getNodeAttributes(cellReference) as GraphNodeAttrs
       ).cell.formula?.substring(node.from, node.to);
-      results += (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value;
+      results +=
+        (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value || 0;
       break;
     case "FunctionCall":
       console.log("eval", results);
       try {
-        results = eval(results);
+        const func = new Function(`return ${results}`);
+        results = func();
+        console.log("Results", results);
       } catch (e: unknown) {
         console.log("ERROR", (e as Error).message, results);
         results = "ERROR! " + (e as Error).message;
@@ -162,7 +171,6 @@ function evaluateGraph(graph: DirectedGraph) {
         graph.setNodeAttribute(node, "cell", {
           ...cell,
           value: result,
-          error: undefined,
         });
       }
     }
@@ -196,7 +204,7 @@ function printSyntaxTree(tree: Tree, input: string) {
 
 function fromGraph(graph: DirectedGraph, data: TableData) {
   forEachNodeInTopologicalOrder(graph, (node, attr) => {
-    console.log(node, attr.cell);
+    console.log("207", node, attr.cell);
     data.data[node] = attr.cell;
   });
   return data;
