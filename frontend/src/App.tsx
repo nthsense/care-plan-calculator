@@ -11,7 +11,6 @@ import {
 import { type Columns, type Data, type TableData } from "./types/TableData";
 import { SpreadsheetTableCell } from "./components/ui/spreadsheet-table-cell";
 import { PlusSquareIcon } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 import { SpreadsheetTableHeader } from "./components/ui/spreadsheet-table-header";
 
 function App() {
@@ -48,10 +47,22 @@ function App() {
   );
 
   const handleAddColumn = useCallback(() => {
-    setTableColumns((columns) => ({
-      ...columns,
-      [uuidv4()]: { title: "New Column" },
-    }));
+    setTableColumns((columns) => {
+      const numColumns = Object.keys(columns).length;
+
+      //Limit to 26 columns
+      if (numColumns == 26) {
+        return columns;
+      }
+
+      // This is a slick way to get a letter of the English alphabet from a number.
+      // It doesn't work past numColumns = 26 however.
+      const nextLetter = (numColumns + 10).toString(36).toUpperCase();
+      return {
+        ...columns,
+        [nextLetter]: { title: "New Column" },
+      };
+    });
   }, []);
 
   const handleAddRow = useCallback(() => {
