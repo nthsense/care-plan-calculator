@@ -5,17 +5,27 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "build": "tsc",
-    "dev": "tsx watch src/index.ts"
+    "build": "npm run build:parser && rollup -c",
+    "build:parser": "lezer-generator src/parser/syntax.grammar -o src/parser/syntax.grammar.js",
+    "dev": "npm run build:parser && tsx watch src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "graphology": "^0.26.0",
+    "graphology-dag": "^0.4.1"
   },
   "devDependencies": {
+    "@lezer/generator": "^1.8.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
     "@types/cors": "^2.8.12",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.14",
+    "rollup": "^4.45.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "rollup-plugin-ts": "^3.4.5",
+    "tslib": "^2.8.1",
     "tsx": "^4.16.2",
     "typescript": "^4.4.4"
   }

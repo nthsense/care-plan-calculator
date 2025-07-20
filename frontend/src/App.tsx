@@ -26,7 +26,7 @@ function App() {
     },
     data: {
       A1: { value: "20", formula: "=B1*2", error: "" },
-      D4: { value: "", formula: "=B1*2", error: "#DIV/0!" },
+      D4: { value: undefined, formula: "=B1*2", error: "#DIV/0!" },
     },
   };
 
@@ -78,14 +78,18 @@ function App() {
     });
   }, []);
 
-  const handleEvaluate = async () => {
+  const handleEvaluate = useCallback(async () => {
     try {
       const response = await fetch("/api/evaluate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ data: "Hello from frontend!" }),
+        body: JSON.stringify({
+          rows: tableRows,
+          columns: tableColumns,
+          data: tableData,
+        }),
       });
       const data = await response.json();
       setMessage(data.message);
@@ -93,7 +97,7 @@ function App() {
       console.error("Error calling evaluate endpoint:", error);
       setMessage("Error connecting to backend.");
     }
-  };
+  }, [tableRows, tableColumns, tableData]);
 
   const getHeaders = () => {
     const headers = [];
@@ -117,7 +121,7 @@ function App() {
       const cellId: string = id + index;
       let data = tableData[cellId];
       if (data === undefined) {
-        data = { value: "" };
+        data = { value: undefined };
       }
       cells.push(
         <SpreadsheetTableCell

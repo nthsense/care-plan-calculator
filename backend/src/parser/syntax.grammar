@@ -1,0 +1,212 @@
+@top Program { start }
+
+start { formulaWithEq | formula | arrayFormula }
+
+// Just different ways to pass the formula
+formulaWithEq { eqop formula }
+arrayFormula { openCurlyParen eqop formula closeCurlyParen }
+
+formula {  
+  referenceWrap
+  | Constant 
+  | FunctionCall 
+  | ConstantArray 
+  | OpenParen formula? CloseParen
+}
+
+Constant { Number | TextToken | BoolToken | ErrorToken }
+
+// Arrays
+ConstantArray { openCurlyParen ArrayColumns closeCurlyParen }
+ArrayColumns { ArrayRows (arrayColumnSeparator ArrayRows)* }
+ArrayRows { ArrayConstant (arrayRowSeparator ArrayConstant)* }
+ArrayConstant { Constant | arrayPrefixOp Number | RefErrorToken }
+arrayPrefixOp { plusop | minop | at }
+
+arrayColumnSeparator { semicolon }
+// Depending on the decimal seperator, the separator of an array row changes
+@external specialize { arrayRowSeparatorToken } isArrayRowSeparator from "./tokens" {
+  arrayRowSeparator
+}
+
+// Functions
+FunctionCall {
+  Function Arguments CloseParen
+  | (plusop | minop | !unaryPreFix at) formula
+  | formula !unaryPostFix percentop
+  | formulaInfixOp
+}
+formulaInfixOp { 
+    formula !exponentiation expop formula
+  | formula !multiplication mulop formula
+  | formula !multiplication divop formula
+  | formula !addition plusop formula
+  | formula !addition minop formula
+  | formula !concatenation concatop formula
+  | formula !comparsion gtop formula
+  | formula !comparsion eqop formula
+  | formula !comparsion ltop formula
+  | formula !comparsion neqop formula
+  | formula !comparsion gteop formula
+  | formula !comparsion lteop formula
+}
+
+Arguments { Argument (Separator Argument)* }
+Argument { formula | "" }
+
+// References
+referenceWrap {
+  Reference
+  | OpenParen Reference !paren CloseParen
+}
+
+Reference { 
+  ReferenceItem 
+  | ReferenceFunctionCall
+  | referencePrefix ReferenceItem
+}
+
+ReferenceItem { 
+  CellToken 
+  | NameToken 
+  | VerticalRangeToken 
+  | HorizontalRangeToken
+  | RefErrorToken
+}
+
+referencePrefix {
+  SheetToken
+  | QuoteS SheetQuotedToken
+  | MultipleSheetsToken
+  | QuoteS MultipleSheetsQuotedToken
+  | RefErrorToken
+}
+
+ReferenceFunctionCall {
+  RangeToken
+  | referenceWrap !union intersecop referenceWrap
+  | OpenParen Union CloseParen
+  | Reference !unaryPostFix hash
+}
+
+RangeToken { 
+  referenceWrap !range colon referenceWrap
+}
+
+Union { Reference (!union Separator Reference)+ }
+
+@external tokens isIntersecop from "./tokens" { intersecop }
+
+// Depending on the decimal seperator, the separator changes
+@external tokens Separator from "./tokens" { Separator }
+
+// Depending on the idiom, errors change
+@external specialize { refHashtag } isErrors from "./tokens" {
+  RefErrorToken,
+  ErrorToken
+}
+
+// Depending on the idiom, boolean changes
+@external specialize { NameToken } desambiguateNameToken from "./tokens" {
+  BoolToken
+}
+
+@external tokens decimalSeparator from "./tokens" { decimalSeparator }
+Number {
+  numberToken+ (decimalSeparator numberToken*)? 
+  | decimalSeparator numberToken
+}
+
+@precedence {
+  paren @left,
+  range @left,
+  union @left,
+  unaryPreFix @left,
+  unaryPostFix @left,
+  exponentiation @left,
+  multiplication @left,
+  addition @left,
+  concatenation @left,
+  comparsion @left
+}
+
+@tokens {
+
+  @precedence { 
+    HorizontalRangeToken,
+    MultipleSheetsQuotedToken,
+    SheetQuotedToken,
+    MultipleSheetsToken,
+    TextToken,
+    SheetToken,
+    numberToken,
+    Function,
+    VerticalRangeToken,
+    CellToken,
+    arrayRowSeparatorToken,
+    NameToken,
+    refHashtag,
+    hash,
+    at,
+    plusop,
+    space
+  }
+
+  space { $[ \t\n\r]+ }
+
+  // Symbols
+  at { "@" }
+  arrayRowSeparatorToken { "\\" | comma }
+  comma { "," }
+  colon { ":" }
+  hash { "#" }
+  semicolon { ";" }
+  OpenParen[closedBy=CloseParen] { "(" }
+  CloseParen[openedBy="OpenParen | Function"] { ")" }
+  closeCurlyParen { "}" }
+  openCurlyParen { "{" }
+  QuoteS { "'" }
+
+  // Operators
+  mulop { "*" }
+  plusop { "+" }
+  divop { "/" }
+  minop { "-" }
+  concatop { "&" }
+  expop { "^" }
+  percentop { "%" }
+  gtop { ">" }
+  eqop { "=" }
+  ltop { "<" }
+  neqop { "<>" }
+  gteop { ">=" }
+  lteop { "<=" }
+
+  // Literals
+  numberToken { 
+    @digit+
+   //@digit+ (decimalSeparator @digit*)? 
+   //| decimalSeparator @digit+
+  }
+  TextToken { "\"" ( "\"\"" | !["])* "\"" }
+  refHashtag { hash $[A-Z]+ $[A-Z0-9!/_?Ú]* }
+
+  Function[closedBy=CloseParen] { $[a-zA-Z_]+ $[a-zA-Z_0-9.]* OpenParen }
+
+  column { $[$]? @asciiLetter @asciiLetter? @asciiLetter? }
+  row { $[$]? @digit+ }
+  VerticalRangeToken { column ":" column }
+  HorizontalRangeToken { row ":" row }
+  CellToken { column row }
+  NameToken { $[a-zA-Z\\_] $[a-zA-Z0-9_\\\.?€]* }
+
+  normalSheetName { !['\*\[\]\\:/?();{}#=<>&\-^%, ]+ }
+  quotedSheetName { (!['\*\[\]\\:/?] | "''")+ }
+  SheetToken { normalSheetName "!"}
+  SheetQuotedToken { quotedSheetName "'!" }
+  MultipleSheetsToken { normalSheetName ":" normalSheetName "!" }
+  MultipleSheetsQuotedToken { quotedSheetName ":" quotedSheetName "'!"}
+
+}
+
+@skip { space }
