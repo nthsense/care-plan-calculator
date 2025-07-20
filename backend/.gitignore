@@ -1,0 +1,3 @@
+# Generated parser files
+src/parser/syntax.grammar.js
+src/parser/syntax.grammar.terms.js

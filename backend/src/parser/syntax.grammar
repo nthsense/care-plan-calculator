@@ -3,8 +3,8 @@
 start { formulaWithEq | formula | arrayFormula }
 
 // Just different ways to pass the formula
-formulaWithEq { eqop formula }
-arrayFormula { openCurlyParen eqop formula closeCurlyParen }
+formulaWithEq { Eqop formula }
+arrayFormula { openCurlyParen Eqop formula closeCurlyParen }
 
 formula {  
   referenceWrap
@@ -21,7 +21,7 @@ ConstantArray { openCurlyParen ArrayColumns closeCurlyParen }
 ArrayColumns { ArrayRows (arrayColumnSeparator ArrayRows)* }
 ArrayRows { ArrayConstant (arrayRowSeparator ArrayConstant)* }
 ArrayConstant { Constant | arrayPrefixOp Number | RefErrorToken }
-arrayPrefixOp { plusop | minop | at }
+arrayPrefixOp { Plusop | Minop | at }
 
 arrayColumnSeparator { semicolon }
 // Depending on the decimal seperator, the separator of an array row changes
@@ -32,23 +32,23 @@ arrayColumnSeparator { semicolon }
 // Functions
 FunctionCall {
   Function Arguments CloseParen
-  | (plusop | minop | !unaryPreFix at) formula
-  | formula !unaryPostFix percentop
+  | (Plusop | Minop | !unaryPreFix at) formula
+  | formula !unaryPostFix Percentop
   | formulaInfixOp
 }
-formulaInfixOp { 
-    formula !exponentiation expop formula
-  | formula !multiplication mulop formula
-  | formula !multiplication divop formula
-  | formula !addition plusop formula
-  | formula !addition minop formula
-  | formula !concatenation concatop formula
-  | formula !comparsion gtop formula
-  | formula !comparsion eqop formula
-  | formula !comparsion ltop formula
-  | formula !comparsion neqop formula
-  | formula !comparsion gteop formula
-  | formula !comparsion lteop formula
+formulaInfixOp {
+    formula !exponentiation Expop formula
+  | formula !multiplication Mulop formula
+  | formula !multiplication Divop formula
+  | formula !addition Plusop formula
+  | formula !addition Minop formula
+  | formula !concatenation Concatop formula
+  | formula !comparsion Gtop formula
+  | formula !comparsion Eqop formula
+  | formula !comparsion Ltop formula
+  | formula !comparsion Neqop formula
+  | formula !comparsion Gteop formula
+  | formula !comparsion Lteop formula
 }
 
 Arguments { Argument (Separator Argument)* }
@@ -148,7 +148,7 @@ Number {
     refHashtag,
     hash,
     at,
-    plusop,
+    Plusop,
     space
   }
 
@@ -168,19 +168,19 @@ Number {
   QuoteS { "'" }
 
   // Operators
-  mulop { "*" }
-  plusop { "+" }
-  divop { "/" }
-  minop { "-" }
-  concatop { "&" }
-  expop { "^" }
-  percentop { "%" }
-  gtop { ">" }
-  eqop { "=" }
-  ltop { "<" }
-  neqop { "<>" }
-  gteop { ">=" }
-  lteop { "<=" }
+  Mulop { "*" }
+  Plusop { "+" }
+  Divop { "/" }
+  Minop { "-" }
+  Concatop { "&" }
+  Expop { "^" }
+  Percentop { "%" }
+  Gtop { ">" }
+  Eqop { "=" }
+  Ltop { "<" }
+  Neqop { "<>" }
+  Gteop { ">=" }
+  Lteop { "<=" }
 
   // Literals
   numberToken { 
