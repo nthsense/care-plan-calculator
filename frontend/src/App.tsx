@@ -15,7 +15,7 @@ import { SpreadsheetTableHeader } from "./components/ui/spreadsheet-table-header
 
 function App() {
   const [message, setMessage] = useState("");
-  const template: TableData = {
+  const template2: TableData = {
     rows: 10,
     columns: {
       A: { title: "Domain" },
@@ -30,12 +30,22 @@ function App() {
     },
   };
 
+  const template: TableData = {
+    rows: 1,
+    columns: {
+      A: { title: "Column A" },
+    },
+    data: {
+      A1: { value: undefined },
+    },
+  };
+
   const [tableRows, setTableRows] = useState<number>(template.rows);
   const [tableColumns, setTableColumns] = useState<Columns>(template.columns);
   const [tableData, setTableData] = useState<Data>(template.data);
 
   const handleCellUpdate = useCallback(
-    (cellId: string, value: string, formula?: string) => {
+    (cellId: string, value: string | undefined, formula?: string) => {
       setTableData((tableData) => {
         const newData = { ...tableData };
         const currCellData = newData[cellId];
@@ -139,7 +149,7 @@ function App() {
   const getRows = () => {
     const numRows = tableRows;
     const rows = [];
-    for (let i = 1; i < numRows; i++) {
+    for (let i = 1; i <= numRows; i++) {
       rows.push(<TableRow key={"row" + i}>{getRow(i)}</TableRow>);
     }
     return rows;
@@ -165,6 +175,7 @@ function App() {
           variant="ghost"
           size="icon"
           className="absolute top-0 right-0"
+          data-testid="addColumn"
           onClick={handleAddColumn}
         >
           <PlusSquareIcon></PlusSquareIcon>
@@ -173,6 +184,7 @@ function App() {
           variant="ghost"
           size="icon"
           className="absolute bottom-0 left-0"
+          data-testid="addRow"
           onClick={handleAddRow}
         >
           <PlusSquareIcon></PlusSquareIcon>

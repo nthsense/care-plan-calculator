@@ -112,6 +112,7 @@ export const SpreadsheetTableCell = React.memo(function ({
     >
       <Popover open={showFormulaEditor}>
         <Input
+          data-testid={id}
           value={displayValue}
           onFocus={handleFocus}
           onBlur={handleBlur}
