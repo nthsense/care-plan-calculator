@@ -40,7 +40,7 @@ function App() {
         const newData = { ...tableData };
         const currCellData = newData[cellId];
         newData[cellId] = { ...currCellData, value, formula };
-        return { ...tableData, ...newData };
+        return newData;
       });
     },
     [],
@@ -91,8 +91,9 @@ function App() {
           data: tableData,
         }),
       });
-      const data = await response.json();
-      setMessage(data.message);
+      const res = await response.json();
+      setTableData(res.table.data);
+      setMessage(res.message);
     } catch (error) {
       console.error("Error calling evaluate endpoint:", error);
       setMessage("Error connecting to backend.");

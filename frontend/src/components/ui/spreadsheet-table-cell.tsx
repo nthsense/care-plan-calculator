@@ -14,12 +14,18 @@ interface SpreadsheetTableCellProps {
   className?: string;
   id: string;
   data: Cell;
-  cellUpdate: (id: string, value: string, formula?: string) => void;
+  cellUpdate: (id: string, value: string | undefined, formula?: string) => void;
   [key: string]: unknown;
 }
 
 function extractValue(cell: Cell): string {
-  return cell.error ? cell.error : cell.formula ? "###" : cell.value;
+  return cell.error
+    ? cell.error
+    : cell.value
+      ? cell.value
+      : cell.formula
+        ? "###"
+        : "";
 }
 
 function getClassNames(cell: Cell, editMode: boolean): string {
@@ -48,7 +54,7 @@ export const SpreadsheetTableCell = React.memo(function ({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const handleChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      console.log("Cell Changed");
+      console.log("Cell Changed", event.target.value);
       cellUpdate(id, event.target.value);
     },
     [cellUpdate, id],

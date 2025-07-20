@@ -3,7 +3,6 @@ import cors from "cors";
 import { Cell, Data, TableData } from "./types/TableData.js";
 import { DirectedGraph } from "graphology";
 import { parser } from "./parser/syntax.grammar.js";
-import { table } from "node:console";
 import { SyntaxNode, SyntaxNodeRef, Tree } from "@lezer/common";
 import {
   forEachNodeInTopologicalOrder,
@@ -58,52 +57,119 @@ function toGraph(tableData: Data) {
         },
       });
       printSyntaxTree(tree, cell.formula);
+    } else {
+      if (graph.hasNode(key)) {
+        graph.updateNode(key, (attrs) => ({ ...attrs, cell }));
+      } else {
+        graph.addNode(key, { cell });
+      }
     }
   }
 
   return graph;
 }
 
-function evaluate(
+function evaluateNode(
   node: SyntaxNode,
   graph: DirectedGraph,
   cellReference: string,
 ) {
   let results = "";
-
+  console.log(
+    cellReference,
+    node.type.name,
+    (
+      graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+    ).cell.formula?.substring(node.from, node.to),
+  );
   // Depth first
   if (node.firstChild) {
-    results += evaluate(node.firstChild, graph, cellReference);
+    results += evaluateNode(node.firstChild, graph, cellReference);
+  }
+
+  // Ignore the leading equals sign on formulas.
+  if (node.type.name == "Eqop" && node.parent?.type.name == "Program") {
+    if (node.nextSibling) {
+      results += evaluateNode(node.nextSibling, graph, cellReference);
+    }
+    return results;
   }
 
   switch (node.type.name) {
+    case "NameToken":
+      results += `"${(
+        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+      ).cell.formula?.substring(node.from, node.to)}"`;
+      break;
+    case "Eqop":
+      // The equal sign is always used to compare inside a formula.
+      results += "==";
+      break;
+    case "BoolToken":
+    case "Number":
+    case "Mulop":
+    case "Plusop":
+    case "Divop":
+    case "Minop":
+    case "Concatop":
+    case "Expop":
+    case "Percentop":
+    case "Gtop":
+    case "Ltop":
+    case "Neqop":
+    case "Gteop":
+    case "Lteop":
+    case "OpenParen":
+    case "CloseParen":
+      results += (
+        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+      ).cell.formula?.substring(node.from, node.to);
+      break;
     case "CellToken":
       const ref = (
         graph.getNodeAttributes(cellReference) as GraphNodeAttrs
       ).cell.formula?.substring(node.from, node.to);
-      console.log(ref, graph.getNodeAttributes(ref));
-      results += `LOOKUP(${ref}):[${(graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value}]`;
+      results += (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value;
+      break;
+    case "FunctionCall":
+      console.log("eval", results);
+      try {
+        results = eval(results);
+      } catch (e: unknown) {
+        console.log("ERROR", (e as Error).message, results);
+        results = "ERROR! " + (e as Error).message;
+      }
+      break;
     default:
-      results += (
-        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-      ).cell.formula?.substring(node.from, node.to);
+      results += "";
   }
 
   // Then breadth
   if (node.nextSibling) {
-    results += evaluate(node.nextSibling, graph, cellReference);
+    results += evaluateNode(node.nextSibling, graph, cellReference);
   }
 
   return results;
 }
 
 function evaluateGraph(graph: DirectedGraph) {
-  forEachNodeInTopologicalOrder(graph, (node, attr, generationIndex) => {
-    // Note that generationIndex will be monotonically increasing from 0 to n.
-    console.log(node, attr, generationIndex);
+  forEachNodeInTopologicalOrder(graph, (node, attr) => {
     const { tree, cell } = attr as GraphNodeAttrs;
     if (tree) {
-      console.log(evaluate(tree.topNode, graph, node));
+      const result = evaluateNode(tree.topNode, graph, node);
+      if (result.startsWith("ERROR!")) {
+        graph.setNodeAttribute(node, "cell", {
+          ...cell,
+          error: result,
+          value: undefined,
+        });
+      } else {
+        graph.setNodeAttribute(node, "cell", {
+          ...cell,
+          value: result,
+          error: undefined,
+        });
+      }
     }
   });
 }
@@ -133,14 +199,22 @@ function printSyntaxTree(tree: Tree, input: string) {
   console.log("---------------------");
 }
 
-function fromGraph() {}
+function fromGraph(graph: DirectedGraph, data: TableData) {
+  forEachNodeInTopologicalOrder(graph, (node, attr) => {
+    console.log(node, attr.cell);
+    data.data[node] = attr.cell;
+  });
+  return data;
+}
 
 app.post("/api/evaluate", (req, res) => {
   console.log("Received request:", req.body);
   const data: TableData = req.body;
-  evaluateGraph(toGraph(data.data));
+  const graph = toGraph(data.data);
+  evaluateGraph(graph);
+  const result = fromGraph(graph, data);
 
-  res.json({ message: "Evaluation received", data: req.body });
+  res.json({ message: "Evaluation received", table: result });
 });
 
 app.listen(port, () => {
