@@ -1,11 +1,14 @@
 export interface TableData {
   rows: number;
-  columns: Column[];
+  columns: Columns;
   data: Data;
 }
 
+export interface Columns {
+  [key: string]: Column;
+}
+
 export interface Column {
-  id: string;
   title: string;
 }
 

@@ -5,25 +5,26 @@ import {
   Table,
   TableBody,
   TableCaption,
-  TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "./components/ui/table";
-import { type Column, type Data, type TableData } from "./types/TableData";
+import { type Columns, type Data, type TableData } from "./types/TableData";
 import { SpreadsheetTableCell } from "./components/ui/spreadsheet-table-cell";
+import { PlusSquareIcon } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import { SpreadsheetTableHeader } from "./components/ui/spreadsheet-table-header";
 
 function App() {
   const [message, setMessage] = useState("");
   const template: TableData = {
     rows: 10,
-    columns: [
-      { id: "A", title: "Domain" },
-      { id: "B", title: "Sub-domain" },
-      { id: "C", title: "Raw Score" },
-      { id: "D", title: "v-Scale Score" },
-      { id: "E", title: "Notes" },
-    ],
+    columns: {
+      A: { title: "Domain" },
+      B: { title: "Sub-domain" },
+      C: { title: "Raw Score" },
+      D: { title: "v-Scale Score" },
+      E: { title: "Notes" },
+    },
     data: {
       A1: { value: "20", formula: "=B1*2", error: "" },
       D4: { value: "", formula: "=B1*2", error: "#DIV/0!" },
@@ -31,7 +32,7 @@ function App() {
   };
 
   const [tableRows, setTableRows] = useState<number>(template.rows);
-  const [tableColumns, setTableColumns] = useState<Column[]>(template.columns);
+  const [tableColumns, setTableColumns] = useState<Columns>(template.columns);
   const [tableData, setTableData] = useState<Data>(template.data);
 
   const handleCellUpdate = useCallback(
@@ -45,6 +46,26 @@ function App() {
     },
     [],
   );
+
+  const handleAddColumn = useCallback(() => {
+    setTableColumns((columns) => ({
+      ...columns,
+      [uuidv4()]: { title: "New Column" },
+    }));
+  }, []);
+
+  const handleAddRow = useCallback(() => {
+    setTableRows((rows) => rows + 1);
+  }, []);
+
+  const handleHeaderUpdate = useCallback((id: string, title: string) => {
+    setTableColumns((tableColumns) => {
+      const newColumns = { ...tableColumns };
+      const currColumn = newColumns[id];
+      newColumns[id] = { ...currColumn, title };
+      return { ...tableColumns, ...newColumns };
+    });
+  }, []);
 
   const handleEvaluate = async () => {
     try {
@@ -64,17 +85,25 @@ function App() {
   };
 
   const getHeaders = () => {
-    return tableColumns.map((column) => (
-      <TableHead className="w-[100px]" key={column.id}>
-        {column.title}
-      </TableHead>
-    ));
+    const headers = [];
+    for (const id in tableColumns) {
+      headers.push(
+        <SpreadsheetTableHeader
+          className="w-[100px]"
+          key={id}
+          id={id}
+          {...tableColumns[id]}
+          headerUpdate={handleHeaderUpdate}
+        />,
+      );
+    }
+    return headers;
   };
 
   const getRow = (index: number) => {
     const cells = [];
-    for (const col of tableColumns) {
-      const cellId: string = col.id + index;
+    for (const id in tableColumns) {
+      const cellId: string = id + index;
       let data = tableData[cellId];
       if (data === undefined) {
         data = { value: "" };
@@ -106,16 +135,33 @@ function App() {
         <Button onClick={handleEvaluate}>Evaluate</Button>
       </div>
       <p className="read-the-docs">{message}</p>
-
-      <Table>
-        <TableCaption>
-          Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)
-        </TableCaption>
-        <TableHeader>
-          <TableRow>{getHeaders()}</TableRow>
-        </TableHeader>
-        <TableBody>{getRows()}</TableBody>
-      </Table>
+      <div className="relative">
+        <Table>
+          <TableCaption>
+            Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)
+          </TableCaption>
+          <TableHeader>
+            <TableRow>{getHeaders()}</TableRow>
+          </TableHeader>
+          <TableBody>{getRows()}</TableBody>
+        </Table>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-0 right-0"
+          onClick={handleAddColumn}
+        >
+          <PlusSquareIcon></PlusSquareIcon>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute bottom-0 left-0"
+          onClick={handleAddRow}
+        >
+          <PlusSquareIcon></PlusSquareIcon>
+        </Button>
+      </div>
     </>
   );
 }
