@@ -25,22 +25,24 @@ interface SpreadsheetTableCellProps {
  * @returns The string to be displayed in the cell's input field.
  */
 function extractValue(cell: Cell): string {
-  return cell.error
-    ? cell.error
-    : cell.value
-      ? cell.value
-      : cell.formula
-        ? "###"
-        : "";
+  if (cell.error) {
+    return cell.error;
+  }
+  if (cell.value) {
+    return cell.value;
+  }
+  if (cell.formula) {
+    return "###";
+  }
+  return "";
 }
 
 /**
  * Determines the appropriate CSS classes for a cell based on its state.
  * @param cell The cell data object.
- * @param editMode Whether the cell is currently in edit mode.
  * @returns A string of Tailwind CSS classes.
  */
-function getClassNames(cell: Cell, editMode: boolean): string {
+function getClassNames(cell: Cell): string {
   let additionalClassName = "";
   if (!cell) {
     additionalClassName = "bg-gray-300";
@@ -48,9 +50,6 @@ function getClassNames(cell: Cell, editMode: boolean): string {
     additionalClassName = "bg-red-700";
   }
 
-  if (editMode) {
-    additionalClassName += " border border-gray-700";
-  }
   return additionalClassName;
 }
 
@@ -66,14 +65,13 @@ export const SpreadsheetTableCell = React.memo(function ({
   id,
   ...props
 }: SpreadsheetTableCellProps) {
-  const [editMode, setEditMode] = React.useState(false);
   const [showFormulaEditor, setShowFormulaEditor] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   /**
    * Handles changes to the input field for literal values.
    */
-  const handleChange = React. useCallback(
+  const handleChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       cellUpdate(id, event.target.value);
     },
@@ -107,13 +105,6 @@ export const SpreadsheetTableCell = React.memo(function ({
   }, [data]);
 
   /**
-   * Exits edit mode when the cell loses focus.
-   */
-  const handleBlur = React.useCallback(() => {
-    setEditMode(false);
-  }, []);
-
-  /**
    * Handles changes from the FormulaEditor component, updating the cell's formula state.
    */
   const handleFormulaChange = React.useCallback(
@@ -133,7 +124,7 @@ export const SpreadsheetTableCell = React.memo(function ({
     setShowFormulaEditor(false);
   }, [inputRef]);
 
-  const additionalClassName = getClassNames(data, editMode);
+  const additionalClassName = getClassNames(data);
   const displayValue: string = extractValue(data);
   const formulaValue: string = data.formula ? data.formula : "";
   const errorValue: string = data.error ? data.error : "";
@@ -150,7 +141,6 @@ export const SpreadsheetTableCell = React.memo(function ({
           data-testid={id}
           value={displayValue}
           onFocus={handleFocus}
-          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
           ref={inputRef}

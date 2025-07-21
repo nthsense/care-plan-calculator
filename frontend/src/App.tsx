@@ -207,7 +207,6 @@ function App() {
               style={{ right: "-35px" }}
               data-testid="addColumn"
               onClick={handleAddColumn}
-              aria-text="Add Column"
             >
               <PlusSquareIcon></PlusSquareIcon>
             </Button>
@@ -225,7 +224,6 @@ function App() {
               style={{ bottom: "-20px" }}
               data-testid="addRow"
               onClick={handleAddRow}
-              aria-text="Add Row"
             >
               <PlusSquareIcon></PlusSquareIcon>
             </Button>
