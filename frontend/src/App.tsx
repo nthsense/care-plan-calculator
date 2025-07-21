@@ -105,7 +105,6 @@ function App() {
       setTableData(res.table.data);
       setMessage(res.message);
     } catch (error) {
-      console.error("Error calling evaluate endpoint:", error);
       setMessage("Error connecting to backend.");
     }
   }, [tableRows, tableColumns, tableData]);

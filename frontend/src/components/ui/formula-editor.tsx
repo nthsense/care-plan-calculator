@@ -21,7 +21,6 @@ export const FormulaEditor = function ({
       if (e.docChanged) {
         onChange(e.state.doc.toString());
       }
-      console.log(e);
     }),
   ];
 

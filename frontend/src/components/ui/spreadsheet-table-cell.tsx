@@ -54,7 +54,6 @@ export const SpreadsheetTableCell = React.memo(function ({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const handleChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      console.log("Cell Changed", event.target.value);
       cellUpdate(id, event.target.value);
     },
     [cellUpdate, id],
