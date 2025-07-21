@@ -2,6 +2,7 @@ export interface TableData {
   rows: number;
   columns: Columns;
   data: Data;
+  title?: string;
 }
 
 export interface Columns {

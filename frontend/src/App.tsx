@@ -21,6 +21,7 @@ import {
 function App() {
   const [message, setMessage] = useState("");
   const template2: TableData = {
+    title: "Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)",
     rows: 10,
     columns: {
       A: { title: "Domain" },
@@ -36,6 +37,7 @@ function App() {
   };
 
   const template: TableData = {
+    title: "Starter table",
     rows: 1,
     columns: {
       A: { title: "Column A" },
@@ -45,6 +47,7 @@ function App() {
     },
   };
 
+  const [title, setTitle] = useState<string>(template.title);
   const [tableRows, setTableRows] = useState<number>(template.rows);
   const [tableColumns, setTableColumns] = useState<Columns>(template.columns);
   const [tableData, setTableData] = useState<Data>(template.data);
@@ -108,7 +111,7 @@ function App() {
       });
       const res = await response.json();
       setTableData(res.table.data);
-      setMessage(res.message);
+      setMessage("");
     } catch (error) {
       setMessage("Error connecting to backend.");
     }
@@ -160,16 +163,19 @@ function App() {
   };
   return (
     <>
-      <h1>Care Plan Calculator</h1>
-      <div className="card">
-        <Button onClick={handleEvaluate}>Evaluate</Button>
+      <h1 className="text-xl">Care Plan Calculator</h1>
+      <p className="read-the-docs text-left">{title}</p>
+      <div className="relative text-xs text-left" style={{ height: "40px" }}>
+        Add columns or rows using the "+" buttons, type "=" in a cell to enter a
+        formula, click on a column heading to edit. Click "Evaluate" to see your
+        results.
+        <Button className="absolute top-0 right-0" onClick={handleEvaluate}>
+          Evaluate
+        </Button>
       </div>
-      <p className="read-the-docs">{message}</p>
       <div className="relative">
         <Table>
-          <TableCaption>
-            Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)
-          </TableCaption>
+          <TableCaption>{message}</TableCaption>
           <TableHeader>
             <TableRow>{getHeaders()}</TableRow>
           </TableHeader>
@@ -199,6 +205,7 @@ function App() {
               variant="ghost"
               size="icon"
               className="absolute bottom-0 left-0"
+              style={{ bottom: "-20px" }}
               data-testid="addRow"
               onClick={handleAddRow}
               aria-text="Add Row"
