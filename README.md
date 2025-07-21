@@ -132,3 +132,5 @@ npm test
 - [ ] **TODO** Implement a full set of functions
 - [ ] **TODO** Implement templates for things like the Vineland-3 Adaptive Behavior Scales
 - [ ] **TODO** Support more than 26 columns
+- [ ] **TODO** Frontend and Backend should share the same parser build artifact to ensure compatibilty.
+- [ ] **TODO** Implement typeahead and syntax hints.
