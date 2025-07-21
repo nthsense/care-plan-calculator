@@ -45,6 +45,11 @@ function evaluateNode(
         graph.getNodeAttributes(cellReference) as GraphNodeAttrs
       ).cell.formula?.substring(node.from, node.to)}"`;
       break;
+    case "TextToken":
+      results += (
+        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+      ).cell.formula?.substring(node.from, node.to);
+      break;
     case "Eqop":
       // The equal sign is always used to compare inside a formula.
       results += "==";
@@ -52,16 +57,20 @@ function evaluateNode(
     case "Concatop":
       results += "+";
       break;
+    case "Neqop":
+      results += "!=";
+      break;
+    case "Percentop":
+      results += "* .01";
+      break;
     case "BoolToken":
     case "Number":
     case "Mulop":
     case "Plusop":
     case "Divop":
     case "Minop":
-    case "Percentop":
     case "Gtop":
     case "Ltop":
-    case "Neqop":
     case "Gteop":
     case "Lteop":
     case "OpenParen":
@@ -89,9 +98,11 @@ function evaluateNode(
       break;
     case "FunctionCall":
       try {
-        console.log("Evaluating", results);
         const func = new Function(`return ${results}`);
         results = func();
+        if (Number.isNaN(results)) {
+          throw "NaN";
+        }
       } catch (e: unknown) {
         throw new EvaluationError((e as Error).message, {
           value: undefined,
@@ -106,7 +117,6 @@ function evaluateNode(
   // Then breadth
   if (node.nextSibling) {
     const nextResult = evaluateNode(node.nextSibling, graph, cellReference);
-    console.log("nextResult", nextResult);
     if (node.type.name == "Divop" && nextResult === "0") {
       throw new EvaluationError("Divide by zero", {
         value: undefined,
@@ -116,7 +126,6 @@ function evaluateNode(
       results += evaluateNode(node.nextSibling, graph, cellReference);
     }
   }
-  console.log(results);
   return results;
 }
 
@@ -127,12 +136,6 @@ export default function evaluateGraph(graph: DirectedGraph) {
       let result: string;
       try {
         result = evaluateNode(tree.topNode, graph, node);
-        if (isNaN(result as unknown as number)) {
-          throw new EvaluationError("Not a number", {
-            value: undefined,
-            error: "#VALUE!",
-          });
-        }
         graph.setNodeAttribute(node, "cell", {
           ...cell,
           value: result,

@@ -38,7 +38,9 @@ export function toGraph(tableData: Data, columns: Columns, rows: number) {
               if (!graph.hasNode(tokenText)) {
                 graph.addNode(tokenText, { cell: { value: undefined } });
               }
-              graph.addDirectedEdge(tokenText, key);
+              if (!graph.hasDirectedEdge(tokenText, key)) {
+                graph.addDirectedEdge(tokenText, key);
+              }
             }
           }
           return true;
