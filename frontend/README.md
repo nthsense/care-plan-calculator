@@ -1,69 +1,36 @@
-# React + TypeScript + Vite
+# Frontend Service
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the React frontend for the Care Plan Calculator. It is a modern, single-page application (SPA) built with Vite and TypeScript, providing a dynamic and responsive user interface for interacting with the care plan grid.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Core Responsibilities
 
-## Expanding the ESLint configuration
+- **UI:** Renders the main spreadsheet grid, including headers, rows, and cells.
+- **User Interaction:** Allows users to:
+  - Add and remove rows and columns.
+  - Edit cell values and formulas.
+  - Edit column titles.
+  - Trigger the evaluation process.
+- **State Management:** Manages the client-side state of the grid, including cell data, column definitions, and the number of rows.
+- **API Communication:** Communicates with the backend `POST /api/evaluate` endpoint to send the grid data for evaluation and then displays the results (or errors) returned by the backend.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Key Libraries & Concepts
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- **Vite:** A next-generation frontend tooling system that provides an extremely fast development server with Hot Module Replacement (HMR) and an optimized build process.
+- **React:** The core UI library for building the component-based interface.
+- **TypeScript:** Ensures type safety and improves developer experience.
+- **Tailwind CSS:** A utility-first CSS framework used for styling the application.
+- **Vitest & React Testing Library:** Used for the comprehensive end-to-end test suite. The tests simulate real user interactions (e.g., typing in cells, clicking buttons) and verify that the UI behaves as expected and that the correct data is sent to the backend.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running Tests
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The frontend has a suite of end-to-end tests that cover all the core user stories. To run the tests:
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm test
 ```
