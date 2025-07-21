@@ -20,6 +20,10 @@ import {
 
 import * as tmpl from "./templates/starter.json";
 
+/**
+ * The main application component.
+ * Manages the entire state of the spreadsheet grid and handles user interactions.
+ */
 function App() {
   const [message, setMessage] = useState("");
 
@@ -30,6 +34,12 @@ function App() {
   const [tableColumns, setTableColumns] = useState<Columns>(template.columns);
   const [tableData, setTableData] = useState<Data>(template.data);
 
+  /**
+   * A memoized callback for updating the state of a single cell.
+   * @param cellId The ID of the cell to update (e.g., "A1").
+   * @param value The new literal value of the cell.
+   * @param formula The new formula for the cell.
+   */
   const handleCellUpdate = useCallback(
     (cellId: string, value: string | undefined, formula?: string) => {
       setTableData((tableData) => {
@@ -42,6 +52,10 @@ function App() {
     [],
   );
 
+  /**
+   * A memoized callback for adding a new column to the grid.
+   * Enforces a maximum of 26 columns (A-Z).
+   */
   const handleAddColumn = useCallback(() => {
     setTableColumns((columns) => {
       const numColumns = Object.keys(columns).length;
@@ -61,10 +75,18 @@ function App() {
     });
   }, []);
 
+  /**
+   * A memoized callback for adding a new row to the grid.
+   */
   const handleAddRow = useCallback(() => {
     setTableRows((rows) => rows + 1);
   }, []);
 
+  /**
+   * A memoized callback for updating the title of a column.
+   * @param id The ID of the column to update (e.g., "A").
+   * @param title The new title for the column.
+   */
   const handleHeaderUpdate = useCallback((id: string, title: string) => {
     setTableColumns((tableColumns) => {
       const newColumns = { ...tableColumns };
@@ -74,6 +96,10 @@ function App() {
     });
   }, []);
 
+  /**
+   * A memoized callback for sending the current grid state to the backend for evaluation.
+   * It updates the local cell data with the results returned from the API.
+   */
   const handleEvaluate = useCallback(async () => {
     try {
       const response = await fetch("/api/evaluate", {
@@ -95,6 +121,10 @@ function App() {
     }
   }, [tableRows, tableColumns, tableData]);
 
+  /**
+   * Renders the table header components.
+   * @returns An array of SpreadsheetTableHeader components.
+   */
   const getHeaders = () => {
     const headers = [];
     for (const id in tableColumns) {
@@ -111,6 +141,11 @@ function App() {
     return headers;
   };
 
+  /**
+   * Renders all the cells for a single row.
+   * @param index The 1-based index of the row to render.
+   * @returns An array of SpreadsheetTableCell components.
+   */
   const getRow = (index: number) => {
     const cells = [];
     for (const id in tableColumns) {
@@ -131,6 +166,10 @@ function App() {
     return cells;
   };
 
+  /**
+   * Renders all the rows in the table body.
+   * @returns An array of TableRow components.
+   */
   const getRows = () => {
     const numRows = tableRows;
     const rows = [];

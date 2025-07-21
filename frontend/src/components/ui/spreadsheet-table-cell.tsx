@@ -18,6 +18,12 @@ interface SpreadsheetTableCellProps {
   [key: string]: unknown;
 }
 
+/**
+ * Extracts the display value for a cell based on its state.
+ * The priority is: error > value > formula placeholder > empty string.
+ * @param cell The cell data object.
+ * @returns The string to be displayed in the cell's input field.
+ */
 function extractValue(cell: Cell): string {
   return cell.error
     ? cell.error
@@ -28,6 +34,12 @@ function extractValue(cell: Cell): string {
         : "";
 }
 
+/**
+ * Determines the appropriate CSS classes for a cell based on its state.
+ * @param cell The cell data object.
+ * @param editMode Whether the cell is currently in edit mode.
+ * @returns A string of Tailwind CSS classes.
+ */
 function getClassNames(cell: Cell, editMode: boolean): string {
   let additionalClassName = "";
   if (!cell) {
@@ -42,6 +54,11 @@ function getClassNames(cell: Cell, editMode: boolean): string {
   return additionalClassName;
 }
 
+/**
+ * A memoized component that renders a single, editable cell in the spreadsheet.
+ * It handles the logic for displaying values, errors, and switching to a
+ * formula editor popover when the user types '='.
+ */
 export const SpreadsheetTableCell = React.memo(function ({
   className,
   cellUpdate,
@@ -52,13 +69,20 @@ export const SpreadsheetTableCell = React.memo(function ({
   const [editMode, setEditMode] = React.useState(false);
   const [showFormulaEditor, setShowFormulaEditor] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const handleChange = React.useCallback(
+
+  /**
+   * Handles changes to the input field for literal values.
+   */
+  const handleChange = React. useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       cellUpdate(id, event.target.value);
     },
     [cellUpdate, id],
   );
 
+  /**
+   * Detects when a user types '=' to initiate formula editing.
+   */
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (
@@ -73,16 +97,25 @@ export const SpreadsheetTableCell = React.memo(function ({
     [],
   );
 
+  /**
+   * Shows the formula editor if the cell is focused and already contains a formula.
+   */
   const handleFocus = React.useCallback(() => {
     if (data.formula) {
       setShowFormulaEditor(true);
     }
   }, [data]);
 
+  /**
+   * Exits edit mode when the cell loses focus.
+   */
   const handleBlur = React.useCallback(() => {
     setEditMode(false);
   }, []);
 
+  /**
+   * Handles changes from the FormulaEditor component, updating the cell's formula state.
+   */
   const handleFormulaChange = React.useCallback(
     (formula: string) => {
       cellUpdate(id, "###", formula);
@@ -90,6 +123,9 @@ export const SpreadsheetTableCell = React.memo(function ({
     [cellUpdate, id],
   );
 
+  /**
+   * Closes the formula editor popover and returns focus to the cell's input field.
+   */
   const handleCloseFormulaEditor = React.useCallback(() => {
     if (inputRef && inputRef.current) {
       inputRef.current.focus();

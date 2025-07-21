@@ -5,6 +5,10 @@ import { GraphNodeAttrs } from "./types/GraphNodeAttrs.js";
 
 import { forEachNodeInTopologicalOrder } from "graphology-dag";
 
+/**
+ * Custom error class for handling specific formula evaluation errors.
+ * This allows us to attach the specific cell context to the error for better handling.
+ */
 class EvaluationError extends Error {
   constructor(message: string, cell: Cell) {
     super(message);
@@ -14,6 +18,15 @@ class EvaluationError extends Error {
   public cell: Cell;
 }
 
+/**
+ * Recursively traverses a Lezer syntax tree for a formula and builds a JavaScript-executable string.
+ * It translates formula operators (e.g., <>, ^, &) into their JS equivalents (!=, **, +).
+ * @param node The current node in the syntax tree to process.
+ * @param graph The full dependency graph, used to look up the values of referenced cells.
+ * @param cellReference The ID of the cell being evaluated (e.g., "C1").
+ * @returns A string that can be safely executed by the JavaScript Function constructor.
+ * @throws {EvaluationError} Throws a custom error for specific evaluation failures like #REF! or #DIV/0!.
+ */
 function evaluateNode(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -33,12 +46,7 @@ function evaluateNode(
     }
     return results;
   }
-  console.log(
-    node.type.name,
-    (
-      graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-    ).cell.formula?.substring(node.from, node.to),
-  );
+
   switch (node.type.name) {
     case "NameToken":
       results += `"${(
@@ -129,6 +137,11 @@ function evaluateNode(
   return results;
 }
 
+/**
+ * Traverses the dependency graph in topological order and evaluates each formula cell.
+ * It catches any EvaluationErrors and updates the cell with the appropriate error message.
+ * @param graph The dependency graph to evaluate.
+ */
 export default function evaluateGraph(graph: DirectedGraph) {
   forEachNodeInTopologicalOrder(graph, (node, attr) => {
     const { tree, cell } = attr as GraphNodeAttrs;

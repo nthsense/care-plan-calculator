@@ -4,6 +4,13 @@ import { parser } from "./parser/syntax.grammar.js";
 import { forEachNodeInTopologicalOrder, willCreateCycle } from "graphology-dag";
 import { SyntaxNodeRef, Tree } from "@lezer/common";
 
+/**
+ * Validates if a given cell ID (e.g., "A1", "Z100") exists within the defined grid.
+ * @param id The cell ID to validate.
+ * @param columns The map of columns in the grid.
+ * @param rows The total number of rows in the grid.
+ * @returns True if the cell is valid, false otherwise.
+ */
 function isValidCell(id: string, columns: Columns, rows: number) {
   const matches = id.match(/([a-zA-Z]+)([0-9]+)/)!;
   const colId = matches[1];
@@ -11,6 +18,15 @@ function isValidCell(id: string, columns: Columns, rows: number) {
   return columns[colId] != undefined && rowNum > 0 && rowNum <= rows;
 }
 
+/**
+ * Constructs a directed graph representing the dependencies between cells.
+ * Each cell is a node, and an edge from A to B means B depends on A.
+ * This function also detects and flags circular references.
+ * @param tableData The raw data object containing all cell information.
+ * @param columns The map of columns in the grid.
+ * @param rows The total number of rows in the grid.
+ * @returns A DirectedGraph instance representing the spreadsheet's dependency structure.
+ */
 export function toGraph(tableData: Data, columns: Columns, rows: number) {
   const graph = new DirectedGraph();
   for (const key in tableData) {
@@ -58,6 +74,13 @@ export function toGraph(tableData: Data, columns: Columns, rows: number) {
   return graph;
 }
 
+/**
+ * Populates the original TableData object with the final, evaluated cell data from the graph.
+ * It traverses the graph in topological order to ensure correct data retrieval.
+ * @param graph The evaluated dependency graph.
+ * @param data The original TableData object to populate.
+ * @returns The populated TableData object.
+ */
 export function fromGraph(graph: DirectedGraph, data: TableData) {
   forEachNodeInTopologicalOrder(graph, (node, attr) => {
     data.data[node] = attr.cell;
