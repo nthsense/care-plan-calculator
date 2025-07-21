@@ -26,7 +26,11 @@ function isValidCell(id: string, columns: Columns, rows: number) {
 function toGraph(tableData: Data, columns: Columns, rows: number) {
   const graph = new DirectedGraph();
   for (const key in tableData) {
-    const cell = tableData[key];
+    const cell: Cell = {
+      value: tableData[key].value,
+      formula: tableData[key].formula,
+      error: undefined,
+    };
     if (cell.formula) {
       const tree = parser.parse(cell.formula);
       if (graph.hasNode(key)) {
@@ -79,15 +83,6 @@ class EvaluationError extends Error {
     this.cell = cell;
   }
   public cell: Cell;
-}
-
-function appendCells(cell: Cell, cell2: Cell): Cell {
-  const value1 = cell.value || "";
-  const value2 = cell2.value || "";
-  return {
-    value: value1 + value2,
-    error: cell2.error,
-  };
 }
 
 function evaluateNode(
@@ -194,7 +189,7 @@ function evaluateGraph(graph: DirectedGraph) {
       let result: string;
       try {
         result = evaluateNode(tree.topNode, graph, node);
-        if (isNaN(result)) {
+        if (isNaN(result as unknown as number)) {
           throw new EvaluationError("Not a number", {
             value: undefined,
             error: "#VALUE!",
