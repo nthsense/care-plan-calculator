@@ -110,6 +110,55 @@ describe("POST /api/evaluate", () => {
     });
   });
 
+  describe("Expanded Operators and Functions", () => {
+    it("should handle the concatenation operator (&)", async () => {
+      const requestBody = {
+        columns: { A: { title: "Column A" }, B: { title: "Column B" }, C: { title: "Column C" } },
+        rows: 1,
+        data: { A1: { value: '"hello"' }, B1: { value: '" world"' }, C1: { formula: "=A1&B1" } }
+      };
+      const response = await request(app).post("/api/evaluate").send(requestBody);
+      expect(response.status).toBe(200);
+      expect(response.body.table.data.C1.value).toBe("hello world");
+    });
+
+    it("should handle comparison operators (>, <, =, <>)", async () => {
+      const requestBody = {
+        columns: {
+            A: { title: "Column A" }, B: { title: "Column B" }, C: { title: "Column C" },
+            D: { title: "Column D" }, E: { title: "Column E" }, F: { title: "Column F" }
+        },
+        rows: 1,
+        data: {
+            A1: { value: "10" },
+            B1: { value: "5" },
+            C1: { formula: "=A1>B1" },
+            D1: { formula: "=A1<B1" },
+            E1: { formula: "=A1=A1" },
+            F1: { formula: "=A1<>B1" },
+        }
+      };
+      const response = await request(app).post("/api/evaluate").send(requestBody);
+      expect(response.status).toBe(200);
+      const { data } = response.body.table;
+      expect(data.C1.value).toBe(true);
+      expect(data.D1.value).toBe(false);
+      expect(data.E1.value).toBe(true);
+      expect(data.F1.value).toBe(true);
+    });
+
+    it("should handle the percentage operator (%)", async () => {
+      const requestBody = {
+        columns: { A: { title: "Column A" } },
+        rows: 1,
+        data: { A1: { formula: "=50%" } }
+      };
+      const response = await request(app).post("/api/evaluate").send(requestBody);
+      expect(response.status).toBe(200);
+      expect(response.body.table.data.A1.value).toBe("0.5");
+    });
+  });
+
   describe("Chained Formulas", () => {
     it("should evaluate formulas that depend on other formulas", async () => {
       const requestBody = {
