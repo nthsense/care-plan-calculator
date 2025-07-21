@@ -40,13 +40,6 @@ function toGraph(tableData: Data, columns: Columns, rows: number) {
       }
       tree.iterate({
         enter: (node: SyntaxNodeRef) => {
-          console.log(
-            "33",
-            node.name,
-            node.type.name,
-            cell.formula?.substring(node.from, node.to),
-          );
-
           // TODO: Implement handling for RangeToken (ex, spread A1:D1 to A1, B1, C1, D1)
           if (node.type.name === "CellToken") {
             const tokenText = cell.formula?.substring(node.from, node.to)!;
@@ -63,7 +56,6 @@ function toGraph(tableData: Data, columns: Columns, rows: number) {
           return true;
         },
       });
-      printSyntaxTree(tree, cell.formula);
     } else {
       if (graph.hasNode(key)) {
         graph.updateNode(key, (attrs) => ({ ...attrs, cell }));
@@ -152,7 +144,6 @@ function evaluateNode(
         (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value || "0";
       break;
     case "FunctionCall":
-      console.log("eval", results);
       try {
         const func = new Function(`return ${results}`);
         results = func();
@@ -201,7 +192,6 @@ function evaluateGraph(graph: DirectedGraph) {
         });
       } catch (e: unknown) {
         if (e instanceof EvaluationError) {
-          console.log("EVALUATION ERROR", e.cell);
           graph.setNodeAttribute(node, "cell", {
             ...cell,
             error: e.cell.error,
@@ -214,36 +204,9 @@ function evaluateGraph(graph: DirectedGraph) {
     }
   });
 }
-/**
- * A helper function to print the syntax tree to the console for debugging.
- * This version uses tree.iterate for a simpler and more robust traversal.
- * @param tree The Lezer syntax tree.
- *
- * @param input The original input string.
- */
-function printSyntaxTree(tree: Tree, input: string) {
-  console.log("--- Syntax Tree ---");
-  let indent = "  ";
-  tree.iterate({
-    enter(node) {
-      const nodeName = node.type.name;
-      const nodeText = input.substring(node.from, node.to);
-      console.log(
-        `${indent.slice(2)}${nodeName} [${node.from}-${node.to}]: "${nodeText}"`,
-      );
-      indent += "  ";
-      return true; // Continue traversal
-    },
-    leave() {
-      indent = indent.slice(0, -2);
-    },
-  });
-  console.log("---------------------");
-}
 
 function fromGraph(graph: DirectedGraph, data: TableData) {
   forEachNodeInTopologicalOrder(graph, (node, attr) => {
-    console.log("207", node, attr.cell);
     data.data[node] = attr.cell;
   });
   return data;
@@ -261,7 +224,6 @@ app.post("/api/evaluate", (req, res) => {
     });
   }
 
-  console.log("Received request:", req.body);
   const data: TableData = req.body;
   const graph = toGraph(data.data, data.columns, data.rows);
   evaluateGraph(graph);
