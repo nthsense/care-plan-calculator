@@ -115,6 +115,15 @@ npm test
 ```
 
 ---
+## Assumptions
+- No support for accessibility is needed at this time
+- No need to test security
+- No need to support ranges (ex, =A1:D10)
+- No localization support necessary
+- Performance testing is unnecessary
+- Going above and beyond is OK (support for operators beyond the basic arithmetic, support for more than 100 rows)
+- "Return a grid of evaluated results" means the values should display in the spreadsheet (like Excel), not as a separate results grid.
+- A general-purpose spreadsheet capability will suffice for representing care-related metrics.
 
 ## Future Improvements
 
