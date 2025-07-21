@@ -32,7 +32,7 @@ function extractValue(cell: Cell): string {
     return cell.value;
   }
   if (cell.formula) {
-    return "###";
+    return cell.formula;
   }
   return "";
 }
@@ -109,7 +109,8 @@ export const SpreadsheetTableCell = React.memo(function ({
    */
   const handleFormulaChange = React.useCallback(
     (formula: string) => {
-      cellUpdate(id, "###", formula);
+      console.log(formula);
+      cellUpdate(id, undefined, formula);
     },
     [cellUpdate, id],
   );
@@ -142,6 +143,7 @@ export const SpreadsheetTableCell = React.memo(function ({
           value={displayValue}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
+          onClick={handleFocus}
           onChange={handleChange}
           ref={inputRef}
           readOnly={!allowEditing}

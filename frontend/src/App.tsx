@@ -45,7 +45,11 @@ function App() {
       setTableData((tableData) => {
         const newData = { ...tableData };
         const currCellData = newData[cellId];
-        newData[cellId] = { ...currCellData, value, formula };
+        let error = currCellData?.error;
+        if (formula === undefined || formula.trim() === "") {
+          error = undefined;
+        }
+        newData[cellId] = { ...currCellData, value, formula, error };
         return newData;
       });
     },

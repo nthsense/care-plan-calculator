@@ -48,7 +48,7 @@ test("basic formula evaluation", async () => {
             },
           },
         }),
-    })
+    }),
   );
   global.fetch = fetchMock as any;
 
@@ -77,7 +77,7 @@ test("basic formula evaluation", async () => {
   const expectedPayloadData = {
     A1: { value: "10" },
     B1: { value: "20" },
-    C1: { value: "###", formula: "=A1+B1" },
+    C1: { value: undefined, formula: "=A1+B1" },
   };
   expect(body.data).toEqual(expect.objectContaining(expectedPayloadData));
 
@@ -104,7 +104,7 @@ test("chained formula evaluation", async () => {
             },
           },
         }),
-    })
+    }),
   );
   global.fetch = fetchMock as any;
 
@@ -129,8 +129,8 @@ test("chained formula evaluation", async () => {
 
   const expectedPayloadData = {
     A1: { value: "10" },
-    B1: { value: "###", formula: "=A1*2" },
-    C1: { value: "###", formula: "=B1+5" },
+    B1: { value: undefined, formula: "=A1*2" },
+    C1: { value: undefined, formula: "=B1+5" },
   };
   expect(body.data).toEqual(expect.objectContaining(expectedPayloadData));
 
@@ -157,7 +157,7 @@ test("invalid formula error handling", async () => {
             },
           },
         }),
-    })
+    }),
   );
   global.fetch = fetchMock as any;
 
@@ -183,7 +183,7 @@ test("invalid formula error handling", async () => {
   const expectedPayloadData = {
     A1: { value: "10" },
     B1: { value: "20" },
-    C1: { value: "###", formula: "=A1++B1" },
+    C1: { value: undefined, formula: "=A1++B1" },
   };
   expect(body.data).toEqual(expect.objectContaining(expectedPayloadData));
 
@@ -210,7 +210,7 @@ test("circular reference error handling", async () => {
             },
           },
         }),
-    })
+    }),
   );
   global.fetch = fetchMock as any;
 
@@ -230,8 +230,8 @@ test("circular reference error handling", async () => {
   const body = JSON.parse(fetchOptions.body);
 
   const expectedPayloadData = {
-    A1: { value: "###", formula: "=B1" },
-    B1: { value: "###", formula: "=A1" },
+    A1: { value: undefined, formula: "=B1" },
+    B1: { value: undefined, formula: "=A1" },
   };
   expect(body.data).toEqual(expect.objectContaining(expectedPayloadData));
 
@@ -260,7 +260,7 @@ test("dynamic grid changes", async () => {
             },
           },
         }),
-    })
+    }),
   );
   global.fetch = fetchMock as any;
 
@@ -284,7 +284,7 @@ test("dynamic grid changes", async () => {
   const expectedPayloadData = {
     A1: { value: "10" },
     A2: { value: "20" },
-    B2: { value: "###", formula: "=A1+A2" },
+    B2: { value: undefined, formula: "=A1+A2" },
   };
   expect(body.data).toEqual(expect.objectContaining(expectedPayloadData));
 
