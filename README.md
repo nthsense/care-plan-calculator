@@ -122,3 +122,4 @@ npm test
 - [ ] **TODO** Support RangeTokens in the evaluator so that functions like SUM(A1:D1) can be implemented.
 - [ ] **TODO** Implement a full set of functions
 - [ ] **TODO** Implement templates for things like the Vineland-3 Adaptive Behavior Scales
+- [ ] **TODO** Support more than 26 columns

@@ -12,6 +12,11 @@ import { type Columns, type Data, type TableData } from "./types/TableData";
 import { SpreadsheetTableCell } from "./components/ui/spreadsheet-table-cell";
 import { PlusSquareIcon } from "lucide-react";
 import { SpreadsheetTableHeader } from "./components/ui/spreadsheet-table-header";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./components/ui/tooltip";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -170,24 +175,41 @@ function App() {
           </TableHeader>
           <TableBody>{getRows()}</TableBody>
         </Table>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-0 right-0"
-          data-testid="addColumn"
-          onClick={handleAddColumn}
-        >
-          <PlusSquareIcon></PlusSquareIcon>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute bottom-0 left-0"
-          data-testid="addRow"
-          onClick={handleAddRow}
-        >
-          <PlusSquareIcon></PlusSquareIcon>
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-0 right-0"
+              style={{ right: "-35px" }}
+              data-testid="addColumn"
+              onClick={handleAddColumn}
+              aria-text="Add Column"
+            >
+              <PlusSquareIcon></PlusSquareIcon>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add Column</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute bottom-0 left-0"
+              data-testid="addRow"
+              onClick={handleAddRow}
+              aria-text="Add Row"
+            >
+              <PlusSquareIcon></PlusSquareIcon>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add Row</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </>
   );
