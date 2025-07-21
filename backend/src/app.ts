@@ -29,4 +29,9 @@ app.post("/api/evaluate", (req, res) => {
   res.json({ message: "Evaluation received", table: result });
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+
 export default app;

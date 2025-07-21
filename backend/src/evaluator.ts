@@ -1,4 +1,4 @@
-import { DirectedGraph } from "graphology";
+import Graph, { DirectedGraph } from "graphology";
 import { Cell } from "./types/TableData.js";
 import { SyntaxNode, Tree } from "@lezer/common";
 import { GraphNodeAttrs } from "./types/GraphNodeAttrs.js";
@@ -18,6 +18,216 @@ class EvaluationError extends Error {
   public cell: Cell;
 }
 
+function getStringForNode(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+) {
+  return (
+    graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+  ).cell.formula?.substring(node.from, node.to);
+}
+
+interface PipelineFunctionAcc {
+  value: string;
+  break: boolean;
+  append: (value: string) => PipelineFunctionAcc;
+}
+interface PipelineFunction {
+  (
+    node: SyntaxNode,
+    graph: DirectedGraph,
+    cellReference: string,
+    accumulator: PipelineFunctionAcc,
+  ): PipelineFunctionAcc;
+}
+
+function processChildren(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  if (node.firstChild) {
+    acc.append(evaluateNode(node.firstChild, graph, cellReference));
+  }
+  return acc;
+}
+
+function ignoreProgramNode(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  if (node.type.name == "Eqop" && node.parent?.type.name == "Program") {
+    if (node.nextSibling) {
+      acc.append(evaluateNode(node.nextSibling, graph, cellReference));
+    }
+    acc.break = true;
+  }
+
+  return acc;
+}
+
+function processTextTokens(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  switch (node.type.name) {
+    case "NameToken":
+      // TODO: look up supported names when we add support for functions like SUM, VLOOKUP, and named references
+      throw new EvaluationError("Unsupported name", {
+        value: undefined,
+        error: "#NAME!",
+      });
+    case "TextToken":
+      acc.append(getStringForNode(node, graph, cellReference)!);
+      break;
+  }
+  return acc;
+}
+
+// Some operators need to be converted to their JavaScript equivalents
+function convertOperators(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  switch (node.type.name) {
+    case "Eqop":
+      // The equal sign is always used to compare inside a formula.
+      acc.append("==");
+      break;
+    case "Concatop":
+      acc.append("+");
+      break;
+    case "Neqop":
+      acc.append("!=");
+      break;
+    case "Percentop":
+      acc.append("* .01");
+      break;
+    case "Expop":
+      acc.append("**");
+      break;
+  }
+
+  return acc;
+}
+
+// A "stable" token is one that we leave as-is
+function processStableTokens(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  switch (node.type.name) {
+    case "BoolToken":
+    case "Number":
+    case "Mulop":
+    case "Plusop":
+    case "Divop":
+    case "Minop":
+    case "Gtop":
+    case "Ltop":
+    case "Gteop":
+    case "Lteop":
+    case "OpenParen":
+    case "CloseParen":
+      acc.append(getStringForNode(node, graph, cellReference)!);
+      break;
+  }
+
+  return acc;
+}
+
+function processCellTokens(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  if (node.type.name === "CellToken") {
+    const ref = getStringForNode(node, graph, cellReference);
+
+    if (!graph.hasNode(ref)) {
+      throw new EvaluationError("Ref error", {
+        value: undefined,
+        error: "#REF!",
+      });
+    }
+
+    acc.append(
+      (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value || "0",
+    );
+  }
+
+  return acc;
+}
+
+function processFunctionCalls(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  if (node.type.name === "FunctionCall") {
+    try {
+      const func = new Function(`return ${acc.value}`);
+      acc.value = func();
+      if (Number.isNaN(acc.value)) {
+        throw "NaN";
+      }
+    } catch (e: unknown) {
+      throw new EvaluationError((e as Error).message, {
+        value: undefined,
+        error: "#VALUE!",
+      });
+    }
+  }
+
+  return acc;
+}
+
+function processSiblings(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+  acc: PipelineFunctionAcc,
+): PipelineFunctionAcc {
+  if (node.nextSibling) {
+    const nextResult = evaluateNode(node.nextSibling, graph, cellReference);
+    if (node.type.name == "Divop" && nextResult === "0") {
+      throw new EvaluationError("Divide by zero", {
+        value: undefined,
+        error: "#DIV/0!",
+      });
+    } else {
+      acc.append(evaluateNode(node.nextSibling, graph, cellReference));
+    }
+  }
+  return acc;
+}
+
+function pipeline(
+  context: [SyntaxNode, DirectedGraph, string, PipelineFunctionAcc],
+  ...functions: PipelineFunction[]
+): PipelineFunctionAcc {
+  let acc = context[3];
+  for (const func of functions) {
+    func(...context);
+    if (acc.break) {
+      return acc;
+    }
+  }
+  return acc;
+}
+
 /**
  * Recursively traverses a Lezer syntax tree for a formula and builds a JavaScript-executable string.
  * It translates formula operators (e.g., <>, ^, &) into their JS equivalents (!=, **, +).
@@ -34,106 +244,29 @@ function evaluateNode(
 ): string {
   let results = "";
 
-  // Depth first
-  if (node.firstChild) {
-    results += evaluateNode(node.firstChild, graph, cellReference);
-  }
-
-  // Ignore the leading equals sign on formulas.
-  if (node.type.name == "Eqop" && node.parent?.type.name == "Program") {
-    if (node.nextSibling) {
-      results += evaluateNode(node.nextSibling, graph, cellReference);
-    }
-    return results;
-  }
-
-  switch (node.type.name) {
-    case "NameToken":
-      results += `"${(
-        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-      ).cell.formula?.substring(node.from, node.to)}"`;
-      break;
-    case "TextToken":
-      results += (
-        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-      ).cell.formula?.substring(node.from, node.to);
-      break;
-    case "Eqop":
-      // The equal sign is always used to compare inside a formula.
-      results += "==";
-      break;
-    case "Concatop":
-      results += "+";
-      break;
-    case "Neqop":
-      results += "!=";
-      break;
-    case "Percentop":
-      results += "* .01";
-      break;
-    case "BoolToken":
-    case "Number":
-    case "Mulop":
-    case "Plusop":
-    case "Divop":
-    case "Minop":
-    case "Gtop":
-    case "Ltop":
-    case "Gteop":
-    case "Lteop":
-    case "OpenParen":
-    case "CloseParen":
-      results += (
-        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-      ).cell.formula?.substring(node.from, node.to);
-      break;
-    case "Expop":
-      results += "**";
-      break;
-    case "CellToken":
-      const ref = (
-        graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-      ).cell.formula?.substring(node.from, node.to);
-
-      if (!graph.hasNode(ref)) {
-        throw new EvaluationError("Ref error", {
-          value: undefined,
-          error: "#REF!",
-        });
-      }
-      results +=
-        (graph.getNodeAttributes(ref) as GraphNodeAttrs).cell.value || "0";
-      break;
-    case "FunctionCall":
-      try {
-        const func = new Function(`return ${results}`);
-        results = func();
-        if (Number.isNaN(results)) {
-          throw "NaN";
-        }
-      } catch (e: unknown) {
-        throw new EvaluationError((e as Error).message, {
-          value: undefined,
-          error: "#VALUE!",
-        });
-      }
-      break;
-    default:
-      break;
-  }
-
-  // Then breadth
-  if (node.nextSibling) {
-    const nextResult = evaluateNode(node.nextSibling, graph, cellReference);
-    if (node.type.name == "Divop" && nextResult === "0") {
-      throw new EvaluationError("Divide by zero", {
-        value: undefined,
-        error: "#DIV/0!",
-      });
-    } else {
-      results += evaluateNode(node.nextSibling, graph, cellReference);
-    }
-  }
+  results += pipeline(
+    [
+      node,
+      graph,
+      cellReference,
+      {
+        value: "",
+        break: false,
+        append: function (value: string) {
+          this.value += value;
+          return this;
+        },
+      },
+    ],
+    processChildren,
+    ignoreProgramNode,
+    processTextTokens,
+    convertOperators,
+    processStableTokens,
+    processCellTokens,
+    processFunctionCalls,
+    processSiblings,
+  ).value;
   return results;
 }
 
