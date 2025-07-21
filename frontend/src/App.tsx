@@ -18,36 +18,14 @@ import {
   TooltipTrigger,
 } from "./components/ui/tooltip";
 
+import * as tmpl from "./templates/starter.json";
+
 function App() {
   const [message, setMessage] = useState("");
-  const template2: TableData = {
-    title: "Vineland Adaptive Behavior Scales, Third Edition (Vineland-3)",
-    rows: 10,
-    columns: {
-      A: { title: "Domain" },
-      B: { title: "Sub-domain" },
-      C: { title: "Raw Score" },
-      D: { title: "v-Scale Score" },
-      E: { title: "Notes" },
-    },
-    data: {
-      A1: { value: "20", formula: "=B1*2", error: "" },
-      D4: { value: undefined, formula: "=B1*2", error: "#DIV/0!" },
-    },
-  };
 
-  const template: TableData = {
-    title: "Starter table",
-    rows: 1,
-    columns: {
-      A: { title: "Column A" },
-    },
-    data: {
-      A1: { value: undefined },
-    },
-  };
+  const template: TableData = tmpl;
 
-  const [title, setTitle] = useState<string>(template.title);
+  const [title] = useState<string>(template.title!);
   const [tableRows, setTableRows] = useState<number>(template.rows);
   const [tableColumns, setTableColumns] = useState<Columns>(template.columns);
   const [tableData, setTableData] = useState<Data>(template.data);

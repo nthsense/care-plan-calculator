@@ -1,0 +1,14 @@
+{
+  "title": "Starter table",
+  "rows": 2,
+  "columns": {
+    "A": { "title": "Column A" },
+    "B": { "title": "Column B" }
+  },
+  "data": {
+    "A1": { "value": "" },
+    "B1": { "value": "" },
+    "A2": { "value": "" },
+    "B2": { "value": "" }
+  }
+}
