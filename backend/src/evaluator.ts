@@ -1,6 +1,6 @@
 import Graph, { DirectedGraph } from "graphology";
 import { Cell } from "./types/TableData.js";
-import { SyntaxNode, Tree } from "@lezer/common";
+import { SyntaxNode } from "@lezer/common";
 import { GraphNodeAttrs } from "./types/GraphNodeAttrs.js";
 
 import { forEachNodeInTopologicalOrder } from "graphology-dag";
@@ -18,16 +18,6 @@ class EvaluationError extends Error {
   public cell: Cell;
 }
 
-function getStringForNode(
-  node: SyntaxNode,
-  graph: DirectedGraph,
-  cellReference: string,
-) {
-  return (
-    graph.getNodeAttributes(cellReference) as GraphNodeAttrs
-  ).cell.formula?.substring(node.from, node.to);
-}
-
 interface PipelineFunctionAcc {
   value: string;
   break: boolean;
@@ -42,6 +32,33 @@ interface PipelineFunction {
   ): PipelineFunctionAcc;
 }
 
+/**
+ * Given a parse tree node, return the text represented by that node.
+ * (The parse tree only keeps track of cursor positions, so we get
+ * the original formula text from the graph and substring it)
+ * @param node The Lezer tree node
+ * @param graph The graph instance
+ * @param cellReference The identifier of the cell
+ * @returns
+ */
+function getStringForNode(
+  node: SyntaxNode,
+  graph: DirectedGraph,
+  cellReference: string,
+) {
+  return (
+    graph.getNodeAttributes(cellReference) as GraphNodeAttrs
+  ).cell.formula?.substring(node.from, node.to);
+}
+
+/**
+ * Processes the children of the current node.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processChildren(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -54,6 +71,14 @@ function processChildren(
   return acc;
 }
 
+/**
+ * Ignores the first "=" in the formula at the top-level "Program" node.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function ignoreProgramNode(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -70,6 +95,14 @@ function ignoreProgramNode(
   return acc;
 }
 
+/**
+ * Processes text-based tokens, throwing an error for unsupported names.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processTextTokens(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -90,7 +123,14 @@ function processTextTokens(
   return acc;
 }
 
-// Some operators need to be converted to their JavaScript equivalents
+/**
+ * Converts formula operators to their JavaScript equivalents.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function convertOperators(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -119,7 +159,14 @@ function convertOperators(
   return acc;
 }
 
-// A "stable" token is one that we leave as-is
+/**
+ * Processes tokens that have a direct JavaScript equivalent.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processStableTokens(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -146,6 +193,14 @@ function processStableTokens(
   return acc;
 }
 
+/**
+ * Processes cell tokens, resolving their values from the graph.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processCellTokens(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -170,6 +225,14 @@ function processCellTokens(
   return acc;
 }
 
+/**
+ * Processes function call nodes.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processFunctionCalls(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -194,6 +257,14 @@ function processFunctionCalls(
   return acc;
 }
 
+/**
+ * Processes sibling nodes in the syntax tree.
+ * @param node The current syntax node.
+ * @param graph The graph instance.
+ * @param cellReference The reference of the cell being evaluated.
+ * @param acc The accumulator for the pipeline.
+ * @returns The updated accumulator.
+ */
 function processSiblings(
   node: SyntaxNode,
   graph: DirectedGraph,
@@ -214,6 +285,12 @@ function processSiblings(
   return acc;
 }
 
+/**
+ * Executes a series of processing functions against a context. A function can stop the pipeline processing by setting "break:true" on the accumulator
+ * @param context The context for the pipeline.
+ * @param functions The functions to execute.
+ * @returns The accumulated value.
+ */
 function pipeline(
   context: [SyntaxNode, DirectedGraph, string, PipelineFunctionAcc],
   ...functions: PipelineFunction[]
